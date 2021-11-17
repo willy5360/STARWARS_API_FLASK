@@ -11,6 +11,7 @@ sqlalchemy = "*"
 flask-sqlalchemy = "*"
 flask-migrate = "*"
 flask-swagger = "*"
+flask-jwt-extended = "*"
 psycopg2-binary = "*"
 python-dotenv = "*"
 mysql-connector-python = "*"
@@ -18,7 +19,7 @@ flask-cors = "*"
 gunicorn = "*"
 mysqlclient = "*"
 flask-admin = "*"
-flask-jwt-extended = "*"
+
 
 [requires]
 python_version = "3.8"
