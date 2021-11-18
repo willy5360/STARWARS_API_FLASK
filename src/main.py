@@ -2,15 +2,18 @@
 This module takes care of starting the API Server, Loading the DB and Adding the endpoints
 """
 import os
+from datetime import timedelta
+
 from flask import Flask, request, jsonify, url_for
 from flask_migrate import Migrate
 from flask_swagger import swagger
 from flask_cors import CORS
+from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, JWTManager
+from sqlalchemy import exc
+
 from utils import APIException, generate_sitemap
 from admin import setup_admin
 from models import db, Planets, PlanetsProperties, People, PeopleProperties, Starships, DetailsStarship, Login
-from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, JWTManager
-from sqlalchemy import exc
 
 #from models import Person
 
@@ -57,7 +60,7 @@ def get_starship_by_id(id):
 #     return jsonify(starship_created.to_dict()), 201
 
 
-@app.route('/starships/<int:id>/details', methods=['GET'])
+@app.route('/starships/<int:id>/property', methods=['GET'])
 def select_details(id):
     starship = Starships.get_starship_id(id)
     if starship:
@@ -71,17 +74,23 @@ def select_details(id):
 
 
 
-# @app.route("/login", methods=["POST"])
-# def login():
-#     username = request.json.get("username", None)
-#     password = request.json.get("password", None)
-#     if username and password :
-#         login = Login.get_by_username(username)
+@app.route("/login", methods=["POST"]) # esto es cuando un usuario se logea, le genera un TOKEN
+def login():
+    username = request.json.get("username", None)
+    password = request.json.get("password", None)
 
-#     return jsonify({"error": "invalid data"}), 400
+    if username and password :
+        login = Login.get_by_username(username)
 
-#     access_token = create_access_token(identity=username)
-#     return jsonify(access_token=access_token)
+        if login:
+            access_token = create_access_token(identity=login.to_dict(), expires_delta=timedelta(hours=2))
+            
+            return jsonify({'token': access_token}), 200
+        
+        return jsonify({'error': "User not found"}), 404
+
+    return jsonify({"error": "invalid data"}), 400
+
 
 
 @app.route('/planet', methods=['GET'])
@@ -152,7 +161,7 @@ def get_people_by_id(id):
 
 
         
-@app.route('/people/<int:id>/propertie', methods=['GET'])
+@app.route('/people/<int:id>/property', methods=['GET'])
 def get_properties_by_id(id):
     people=People.get_people_id(id)
     if people:
