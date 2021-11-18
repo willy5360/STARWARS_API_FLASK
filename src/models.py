@@ -18,9 +18,13 @@ class Login(db.Model):
         return{
             "id":self.id,
             "username":self.username
-        }    
+        }
 
 
+    @classmethod
+    def get_by_username(cls, nick_username):
+        user = cls.query.filter_by(username=nick_username).one_or_none()
+        return user
 
 
 class DetailsStarship(db.Model):
@@ -82,8 +86,8 @@ class Starships(db.Model):
         return all_starships
     
     @classmethod
-    def get_starship_id(cls, id):
-        starship = cls.query.filter_by(id=id).one_or_none()
+    def get_starship_id(cls, id_starship):
+        starship = cls.query.filter_by(id_starship)
         return starship
 
     def create_new_starship(self):
@@ -214,7 +218,7 @@ class PeopleProperties(db.Model):
     people=db.relationship("People", back_populates= "properties")
 
     def __repr__(self):
-        return f' Properties are :{self.Height}, id:{self.id}, Hair_color: {self.Hair_color}, Skin_color: {self.Skin_color}, Eyes_color: {self.Eyes_color}, Birth_year: {self.Birth_year}'
+        return f' Properties are :{self.Height}, id:{self.id}, Hair_color: {self.Hair_color}, Birth_year: {self.Birth_year}'
 
     def to_dict(self):
         return {
