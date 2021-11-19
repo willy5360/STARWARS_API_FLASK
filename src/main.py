@@ -13,7 +13,7 @@ from sqlalchemy import exc
 
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, Planets, PlanetsProperties, People, PeopleProperties, Starships, DetailsStarship, Login
+from models import db, Planets, PlanetsProperties, People, PeopleProperties, Starships, DetailsStarship, User
 
 #from models import Person
 
@@ -31,7 +31,22 @@ db.init_app(app)
 CORS(app)
 setup_admin(app)
 
+@app.route("/login", methods=["POST"]) # esto es cuando un usuario se logea, le genera un TOKEN
+def login():
+    username = request.json.get("username", None)
+    password = request.json.get("password", None)
 
+    if username and password :
+        user = User.get_by_username(username)
+
+        if user:
+            access_token = create_access_token(identity=login.to_dict(), expires_delta=timedelta(hours=2))
+            
+            return jsonify({'token': access_token}), 200
+        
+        return jsonify({'error': "User not found"}), 404
+
+    return jsonify({"error": "invalid data"}), 400
 
 
 @app.route('/starships', methods=['GET'])
@@ -69,28 +84,6 @@ def select_details(id):
         return jsonify(details.to_dict()), 200 
     
     return jsonify({'error':'Details not found'}), 400
-
-  
-
-
-
-@app.route("/login", methods=["POST"]) # esto es cuando un usuario se logea, le genera un TOKEN
-def login():
-    username = request.json.get("username", None)
-    password = request.json.get("password", None)
-
-    if username and password :
-        login = Login.get_by_username(username)
-
-        if login:
-            access_token = create_access_token(identity=login.to_dict(), expires_delta=timedelta(hours=2))
-            
-            return jsonify({'token': access_token}), 200
-        
-        return jsonify({'error': "User not found"}), 404
-
-    return jsonify({"error": "invalid data"}), 400
-
 
 
 @app.route('/planet', methods=['GET'])
