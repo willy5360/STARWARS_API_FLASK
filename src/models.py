@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 db = SQLAlchemy()
 
 
-favorite_planet = db.Table('favorite',
+favorite_planet = db.Table('favorite_planet',
     db.Column('planet_id', db.Integer, db.ForeignKey('planets.id'), primary_key=True),
     db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True)
 )
@@ -17,7 +17,7 @@ class User(db.Model):
     password = db.Column(db.String(250), unique=False, nullable=False)
     _is_active = db.Column(db.Boolean, nullable=False)
 
-    fav_planet = db.relationship('Planets', secondary=favorite_planet, lazy = 'subquery', backref = db.backref('user', lazy = True))
+    have_fav_planet = db.relationship('Planets', secondary=favorite_planet, lazy = 'subquery', backref = db.backref('user', lazy = True)) # esto es un array de planetas
 
     def __repr__ (self):
         return f'this is {self.id} and username: {self.username}'
@@ -34,6 +34,31 @@ class User(db.Model):
     def get_by_username(cls, nick_username):
         user = cls.query.filter_by(username=nick_username).one_or_none()
         return user
+
+
+    @classmethod
+    def get_all(cls):
+        users = cls.query.all()
+        return users
+
+
+    @classmethod
+    def get_id(cls, id_user):
+        user = cls.query.get(id_user)
+        return user
+
+
+    def adding_new_user(self):
+        db.session.add(self)
+        db.session.commit()
+        return self
+
+    def add_fav_planet(self, planet):
+        self.have_fav_planet.append(planet)
+        db.session.commit()
+        return self.have_fav_planet
+
+
 
 
 class DetailsStarship(db.Model):
