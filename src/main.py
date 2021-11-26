@@ -108,6 +108,15 @@ def get_user_favorite(id_user, id_planet):
 
 
 
+@app.route('/user', methods=['GET'])
+def get_all_users():
+    users = User.get_all()
+    all_users = [user.to_dict() for user in users]
+    return jsonify(all_users), 200 
+
+
+
+
 @app.route('/starships', methods=['GET'])
 def get_starships():
     starships = Starships.get_all_starships()
@@ -170,6 +179,27 @@ def select_properties(id):
         return jsonify(properties.to_dict()), 200
 
     return jsonify({'error': 'properties not found'}), 400
+
+
+@app.route('/user/<int:id_user>/favourite-starships/<int:id_starship>', methods=['POST'])
+@jwt_required()
+def add_favstarship(id_user,id_starship):
+    token_id = get_jwt_identity()
+    print("token",token_id)
+
+    if token_id.get("id") == id_user:
+        user = User.get_id(id_user)
+        starship = Starships.get_starship_id(id_starship)
+        print("user",user)
+        print("starship",starship)
+
+        if user and starship:
+            add_fav = user.add_fav_starship(starship)
+            print(add_fav)
+            fav_starships = [starship.to_dict() for starship in add_fav]
+            return jsonify(fav_starships), 200
+
+    return jsonify({'error': 'Starship fav not found'}), 404
 
 
 @app.route('/')

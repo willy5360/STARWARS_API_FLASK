@@ -3,10 +3,18 @@ from flask_sqlalchemy import SQLAlchemy
 db = SQLAlchemy()
 
 
+
+
+
+favorite_starship = db.Table('favorite_starship',
+    db.Column('starship_id', db.Integer, db.ForeignKey('starships.id'), primary_key=True),
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True)
+)
 favorite_planet = db.Table('favorite_planet',
     db.Column('planet_id', db.Integer, db.ForeignKey('planets.id'), primary_key=True),
     db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True)
 )
+
 
 
 class User(db.Model):
@@ -17,6 +25,7 @@ class User(db.Model):
     password = db.Column(db.String(250), unique=False, nullable=False)
     _is_active = db.Column(db.Boolean, nullable=False)
 
+    have_fav_starship = db.relationship('Starships', secondary=favorite_starship, lazy = 'subquery', backref = db.backref('user', lazy = True))
     have_fav_planet = db.relationship('Planets', secondary=favorite_planet, lazy = 'subquery', backref = db.backref('user', lazy = True)) # esto es un array de planetas
 
     def __repr__ (self):
@@ -28,12 +37,30 @@ class User(db.Model):
             "id":self.id,
             "username":self.username
         }
+    
+
+    
+    def add_fav_starship (self,starship):
+        self.have_fav_starship.append(starship)
+        db.session.commit()
+        return self.have_fav_starship
 
 
     @classmethod
     def get_by_username(cls, nick_username):
         user = cls.query.filter_by(username=nick_username).one_or_none()
         return user
+
+    @classmethod
+    def get_id(cls, id_user):
+        user = cls.query.get(id_user)
+        return user
+    
+
+    @classmethod
+    def get_all(cls):
+        users = cls.query.all()
+        return users
 
 
     @classmethod
@@ -73,7 +100,7 @@ class DetailsStarship(db.Model):
     starship = db.relationship("Starships", back_populates="details")
 
     def __repr__(self):
-        return f'Starship name is: {self.name}, its manufactured by {self.manufacturer}, model {self.model}, it costs {self.cost} credits, and has a max atmospheric speed of {self.max_atmosphering_speed} km/h.'
+        return f'Starship name is: {self.name}, its manufactured by {self.manufacturer}, model {self.model}, it costs {self.cost_in_credits} credits, and has a max atmospheric speed of {self.max_atmosphering_speed} km/h.'
 
     def to_dict(self):
         return {
@@ -104,7 +131,7 @@ class Starships(db.Model):
     
 
     def __repr__(self):
-        return f'Starship name is: {self.name} and its properties are {self.properties}'
+        return f'Starship name is: {self.name} and its properties are {self.details}'
 
     def to_dict(self):
         return {
@@ -121,7 +148,7 @@ class Starships(db.Model):
     
     @classmethod
     def get_starship_id(cls, id_starship):
-        starship = cls.query.filter_by(id_starship)
+        starship = cls.query.get(id_starship)
         return starship
 
     def create_new_starship(self):
