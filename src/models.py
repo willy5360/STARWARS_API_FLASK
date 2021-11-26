@@ -15,7 +15,7 @@ favorite_planet = db.Table('favorite_planet',
     db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True)
 )
 
-
+#hola esto es una prueba
 
 class User(db.Model):
     __tablename__ = "user"
