@@ -31,6 +31,20 @@ db.init_app(app)
 CORS(app)
 setup_admin(app)
 
+# @app.route('/people', methods=['POST'])
+# def create_people():
+#     new_people=request.json.get('name',None)
+
+#     if not new_people:
+#         return jsonify({'error':'missing people'}), 400
+
+#     people= People(name =new_people)
+#     try:
+#         people_created=people.create()
+#         return jsonify(people_created.to_dict()), 201
+#     except exc.IntegrityError:
+#         return jsonify({'error': 'fail in data'}), 400
+
 @app.route("/login", methods=["POST"]) # esto es cuando un usuario se logea, le genera un TOKEN
 def login():
     username = request.json.get("username", None)
@@ -40,13 +54,58 @@ def login():
         user = User.get_by_username(username)
 
         if user:
-            access_token = create_access_token(identity=login.to_dict(), expires_delta=timedelta(hours=2))
+            access_token = create_access_token(identity=user.to_dict(), expires_delta=timedelta(hours=2))
             
-            return jsonify({'token': access_token}), 200
+            return jsonify({'token': access_token} , {'welcome': username} ), 200
         
         return jsonify({'error': "User not found"}), 404
 
     return jsonify({"error": "invalid data"}), 400
+
+@app.route('/user' , methods=['GET'])
+def get_all_users():
+    users = User.get_all()
+    all_users = [user.to_dict() for user in users] #comprension list
+    return jsonify(all_users), 200
+
+
+@app.route('/user', methods=['POST'])
+def create_new_user():
+    new_user_username = request.json.get('username', None)
+    new_user_password = request.json.get('password', None)
+
+    if not new_user_password and new_user_username:
+        return jsonify({'error':'missing data'}), 400
+    
+    new_user = User(username = new_user_username, password = new_user_password, _is_active = True)
+
+    try:
+        new_use_created = new_user.adding_new_user()
+        return jsonify(new_use_created.to_dict()), 201
+    except exc.IntegrityError:
+        return jsonify({'error':'can not create new user'}), 400
+
+
+
+@app.route('/user/<int:id_user>/fav-planet/<int:id_planet>', methods=['POST'])
+@jwt_required()
+def get_user_favorite(id_user, id_planet):
+    token_id = get_jwt_identity()
+    print("token", token_id)
+
+    if token_id.get("id") == id_user:
+        user = User.get_id(id_user)
+        planet = Planets.get_planet_id(id_planet)
+
+        if user and planet:
+            add_fav = user.add_fav_planet(planet)
+            print("aqui esta add_fav", add_fav)
+            fav_planets = [planet.to_dict() for planet in add_fav ]
+            print ("aqui esta fav planet", fav_planets)
+            return jsonify(fav_planets), 200
+        
+    return jsonify({'error':'Favorite Planet not found'}), 400
+
 
 
 @app.route('/starships', methods=['GET'])
@@ -102,7 +161,6 @@ def get_planet_by_id(id):
     return jsonify({'error': 'Planet not found'}), 400
 
 
-
 @app.route('/planet/<int:id>/property', methods=['GET'])
 def select_properties(id):
     planet = Planets.get_planet_id(id)
@@ -126,7 +184,6 @@ def get_people():
     return jsonify(all_persons), 200
 
 
-
 @app.route('/people/<int:id>', methods=['GET'])
 def get_people_by_id(id):
     people= People.get_by_id(id)
@@ -135,23 +192,6 @@ def get_people_by_id(id):
         return jsonify(people.to_dict()), 200
 
     return jsonify({'error': 'people not found'}), 404
-
-
-
-# @app.route('/people', methods=['POST'])
-# def create_people():
-#     new_people=request.json.get('name',None)
-
-#     if not new_people:
-#         return jsonify({'error':'missing people'}), 400
-
-#     people= People(name =new_people)
-#     try:
-#         people_created=people.create()
-#         return jsonify(people_created.to_dict()), 201
-#     except exc.IntegrityError:
-#         return jsonify({'error': 'fail in data'}), 400
-
 
         
 @app.route('/people/<int:id>/property', methods=['GET'])
