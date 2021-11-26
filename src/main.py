@@ -40,13 +40,22 @@ def login():
         user = User.get_by_username(username)
 
         if user:
-            access_token = create_access_token(identity=login.to_dict(), expires_delta=timedelta(hours=2))
+            access_token = create_access_token(identity=user.to_dict(), expires_delta=timedelta(hours=2))
             
             return jsonify({'token': access_token}), 200
         
         return jsonify({'error': "User not found"}), 404
 
     return jsonify({"error": "invalid data"}), 400
+
+
+@app.route('/user', methods=['GET'])
+def get_all_users():
+    users = User.get_all()
+    all_users = [user.to_dict() for user in users]
+    return jsonify(all_users), 200 
+
+
 
 
 @app.route('/starships', methods=['GET'])
@@ -112,6 +121,27 @@ def select_properties(id):
         return jsonify(properties.to_dict()), 200
 
     return jsonify({'error': 'properties not found'}), 400
+
+
+@app.route('/user/<int:id_user>/favourite-starships/<int:id_starship>', methods=['POST'])
+@jwt_required()
+def add_favstarship(id_user,id_starship):
+    token_id = get_jwt_identity()
+    print("token",token_id)
+
+    if token_id.get("id") == id_user:
+        user = User.get_id(id_user)
+        starship = Starships.get_starship_id(id_starship)
+        print("user",user)
+        print("starship",starship)
+
+        if user and starship:
+            add_fav = user.add_fav_starship(starship)
+            print(add_fav)
+            fav_starships = [starship.to_dict() for starship in add_fav]
+            return jsonify(fav_starships), 200
+
+    return jsonify({'error': 'Starship fav not found'}), 404
 
 
 @app.route('/')
